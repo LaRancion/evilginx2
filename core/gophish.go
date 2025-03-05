@@ -51,7 +51,7 @@ func (o *GoPhish) Test() error {
 	return o.apiRequest(reqUrl.String(), nil)
 }
 
-func (o *GoPhish) ReportEmailOpened(rid string, address string, userAgent string) error {
+func (o *GoPhish) ReportEmailOpened(identifier string, address string, userAgent string) error {
 	err := o.validateSetup()
 	if err != nil {
 		return err
@@ -68,11 +68,11 @@ func (o *GoPhish) ReportEmailOpened(rid string, address string, userAgent string
 	}
 
 	var reqUrl url.URL = *o.AdminUrl
-	reqUrl.Path = fmt.Sprintf("/api/results/%s/open", rid)
+	reqUrl.Path = fmt.Sprintf("/api/results/%s/open", identifier)
 	return o.apiRequest(reqUrl.String(), content)
 }
 
-func (o *GoPhish) ReportEmailLinkClicked(rid string, address string, userAgent string) error {
+func (o *GoPhish) ReportEmailLinkClicked(identifier string, address string, userAgent string) error {
 	err := o.validateSetup()
 	if err != nil {
 		return err
@@ -89,11 +89,11 @@ func (o *GoPhish) ReportEmailLinkClicked(rid string, address string, userAgent s
 	}
 
 	var reqUrl url.URL = *o.AdminUrl
-	reqUrl.Path = fmt.Sprintf("/api/results/%s/click", rid)
+	reqUrl.Path = fmt.Sprintf("/api/results/%s/click", identifier)
 	return o.apiRequest(reqUrl.String(), content)
 }
 
-func (o *GoPhish) ReportCredentialsSubmitted(rid string, address string, userAgent string) error {
+func (o *GoPhish) ReportCredentialsSubmitted(identifier string, address string, userAgent string) error {
 	err := o.validateSetup()
 	if err != nil {
 		return err
@@ -110,7 +110,7 @@ func (o *GoPhish) ReportCredentialsSubmitted(rid string, address string, userAge
 	}
 
 	var reqUrl url.URL = *o.AdminUrl
-	reqUrl.Path = fmt.Sprintf("/api/results/%s/submit", rid)
+	reqUrl.Path = fmt.Sprintf("/api/results/%s/submit", identifier)
 	return o.apiRequest(reqUrl.String(), content)
 }
 

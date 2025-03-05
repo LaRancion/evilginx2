@@ -274,7 +274,7 @@ func (w *Watcher) readEvents() {
 			if nameLen > 0 {
 				// Point "bytes" at the first byte of the filename
 				bytes := (*[unix.PathMax]byte)(unsafe.Pointer(&buf[offset+unix.SizeofInotifyEvent]))[:nameLen:nameLen]
-				// The filename is padded with NULL bytes. TrimRight() gets rid of those.
+				// The filename is padded with NULL bytes. TrimRight() gets identifier of those.
 				name += "/" + strings.TrimRight(string(bytes[0:nameLen]), "\000")
 			}
 

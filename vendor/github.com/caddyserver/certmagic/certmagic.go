@@ -163,7 +163,7 @@ func httpRedirectHandler(w http.ResponseWriter, r *http.Request) {
 	toURL += requestHost
 	toURL += r.URL.RequestURI()
 
-	// get rid of this disgusting unencrypted HTTP connection 🤢
+	// get identifier of this disgusting unencrypted HTTP connection 🤢
 	w.Header().Set("Connection", "close")
 
 	http.Redirect(w, r, toURL, http.StatusMovedPermanently)

