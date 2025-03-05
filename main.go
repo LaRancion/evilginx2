@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"fmt"
+	//"fmt"
 	_log "log"
 	"os"
 	"os/user"
@@ -15,7 +15,7 @@ import (
 	"github.com/kgretzky/evilginx2/log"
 	"go.uber.org/zap"
 
-	"github.com/fatih/color"
+	//"github.com/fatih/color"
 )
 
 var phishlets_dir = flag.String("p", "", "Phishlets directory path")
@@ -55,7 +55,7 @@ func main() {
 	exe_dir := filepath.Dir(exe_path)
 
 	core.Banner()
-	showAd()
+	//showAd()
 
 	_log.SetOutput(log.NullLogger().Writer())
 	certmagic.Default.Logger = zap.NewNop()
