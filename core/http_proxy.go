@@ -40,8 +40,8 @@ import (
 	"github.com/inconshreveable/go-vhost"
 	http_dialer "github.com/mwitkow/go-http-dialer"
 	// added to avoid static js sign detection
-	"github.com/tdewolff/minify"
-	"github.com/tdewolff/minify/js"
+	"github.com/tdewolff/minify/v2"
+	"github.com/tdewolff/minify/v2/js"
 	"github.com/kgretzky/evilginx2/database"
 	"github.com/kgretzky/evilginx2/log"
 )
