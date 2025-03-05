@@ -58,3 +58,4 @@ require (
 )
 
 replace github.com/elazarl/goproxy => github.com/kgretzky/goproxy v0.0.0-20220622134552-7d0e0c658440
+replace github.com/fsnotify/fsnotify v1.8.0 => github.com/fsnotify/fsnotify v1.5.1 // temp fix cause idk whats broken that defaults the package to 1.8.0 lol
